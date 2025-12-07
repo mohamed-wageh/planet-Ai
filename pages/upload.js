@@ -3,15 +3,37 @@ import Head from 'next/head';
 import ImageUpload from '../components/ImageUpload';
 import ResultCard from '../components/ResultCard';
 
+// Generate recommendation based on disease label
+function getRecommendation(label) {
+  if (!label) return 'يرجى استشارة خبير زراعي للحصول على تشخيص دقيق وعلاج مناسب.';
+  
+  const labelLower = label.toLowerCase();
+  
+  // Common recommendations based on disease type
+  if (labelLower.includes('scab')) {
+    return 'إزالة الأوراق المصابة، تطبيق مبيد فطري مناسب، وتجنب الري على الأوراق.';
+  } else if (labelLower.includes('blight')) {
+    return 'إزالة الأوراق المصابة فوراً وتطبيق مبيد فطري قائم على النحاس. تجنب الري العلوي.';
+  } else if (labelLower.includes('rust')) {
+    return 'إزالة الأوراق المصابة، تطبيق مبيد فطري، وتحسين التهوية حول النبات.';
+  } else if (labelLower.includes('spot')) {
+    return 'إزالة الأوراق المصابة، تطبيق مبيد فطري، وتقليل الرطوبة حول النبات.';
+  } else if (labelLower.includes('mosaic')) {
+    return 'إزالة النباتات المصابة فوراً لمنع الانتشار. هذا مرض فيروسي قد يتطلب استبدال النبات.';
+  } else if (labelLower.includes('healthy')) {
+    return 'النبات يبدو صحياً. استمر في العناية الجيدة والمراقبة الدورية.';
+  } else {
+    return 'إزالة الأجزاء المصابة، تطبيق العلاج المناسب حسب نوع المرض، واستشارة خبير زراعي إذا لزم الأمر.';
+  }
+}
+
 export default function Upload() {
-  const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleImageSelect = (file) => {
-    setSelectedImage(file);
     setResult(null);
     setError(null);
     if (file) {
@@ -72,7 +94,19 @@ export default function Upload() {
       }
 
       const data = await response.json();
-      setResult(data);
+      
+      // Transform Hugging Face API response to our expected format
+      // API returns: { predicted_label: "Apple___Apple_scab", confidence: "95.69%" }
+      // We need: { label: "...", confidence: 0.9569, recommendation: "..." }
+      const transformedData = {
+        label: data.predicted_label || data.label || 'Unknown',
+        confidence: typeof data.confidence === 'string' 
+          ? Number.parseFloat(data.confidence.replace('%', '')) / 100 
+          : (data.confidence || 0),
+        recommendation: data.recommendation || getRecommendation(data.predicted_label || data.label),
+      };
+      
+      setResult(transformedData);
     } catch (err) {
       // If connection fails (CORS, network, etc.), show mock response for demo
       if (err.message.includes('fetch failed') || 

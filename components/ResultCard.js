@@ -5,7 +5,11 @@ export default function ResultCard({ result, imagePreview }) {
 
   if (!result) return null;
 
-  const confidencePercent = (result.confidence * 100).toFixed(2);
+  // Handle confidence as number (0-1) or string percentage
+  const confidenceValue = typeof result.confidence === 'string' 
+    ? Number.parseFloat(result.confidence.replace('%', ''))
+    : (result.confidence * 100);
+  const confidencePercent = confidenceValue.toFixed(2);
 
   // Format label for display (remove underscores and format)
   const formatLabel = (label) => {
@@ -29,7 +33,7 @@ export default function ResultCard({ result, imagePreview }) {
         )}
         <div className="result-info">
           <h3 className="result-label">
-            {formatLabel(result.label)}
+            {formatLabel(result.label || result.predicted_label || 'Unknown')}
           </h3>
           <div className="result-confidence">
             مستوى الثقة: {confidencePercent}%
