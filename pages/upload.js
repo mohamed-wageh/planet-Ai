@@ -37,37 +37,19 @@ export default function Upload() {
 
     try {
       const formData = new FormData();
-      // Use 'file' for direct Hugging Face API calls, 'image' for API proxy
-      formData.append('image', file);
+      // Hugging Face API expects 'file' field name
+      formData.append('file', file);
 
-      // Determine which URL to use
-      // For GitHub Pages (static), use Hugging Face API directly
-      // For local dev with Next.js server, use API proxy
+      // Always use Hugging Face API directly (static export doesn't support API routes)
       const huggingFaceUrl = process.env.NEXT_PUBLIC_MODEL_SERVER_URL || 
         'https://abdulrhmanhelmy-plant-disease-inference-api.hf.space/predict';
-      const isProduction = typeof window !== 'undefined' && 
-                           (window.location.hostname.includes('github.io') || 
-                            window.location.hostname.includes('vercel.app') ||
-                            process.env.NODE_ENV === 'production');
-      
-      // Use API proxy for local dev, direct Hugging Face URL for production/static
-      const targetUrl = isProduction ? huggingFaceUrl : '/api/predict';
-      
-      // For direct Hugging Face calls, use 'file' field name
-      if (isProduction) {
-        formData.delete('image');
-        formData.append('file', file);
-      }
 
-      const headers = {};
-      if (isProduction) {
-        headers['accept'] = 'application/json';
-      }
-
-      const response = await fetch(targetUrl, {
+      const response = await fetch(huggingFaceUrl, {
         method: 'POST',
         body: formData,
-        headers: headers,
+        headers: {
+          'accept': 'application/json',
+        },
       });
 
       if (!response.ok) {
