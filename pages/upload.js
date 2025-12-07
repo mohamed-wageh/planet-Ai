@@ -37,23 +37,37 @@ export default function Upload() {
 
     try {
       const formData = new FormData();
+      // Use 'file' for direct Hugging Face API calls, 'image' for API proxy
       formData.append('image', file);
 
       // Determine which URL to use
-      // For GitHub Pages (static), use backend URL directly
+      // For GitHub Pages (static), use Hugging Face API directly
       // For local dev with Next.js server, use API proxy
-      const backendUrl = process.env.NEXT_PUBLIC_MODEL_SERVER_URL || 'http://localhost:5000/predict';
+      const huggingFaceUrl = process.env.NEXT_PUBLIC_MODEL_SERVER_URL || 
+        'https://abdulrhmanhelmy-plant-disease-inference-api.hf.space/predict';
       const isProduction = typeof window !== 'undefined' && 
                            (window.location.hostname.includes('github.io') || 
                             window.location.hostname.includes('vercel.app') ||
                             process.env.NODE_ENV === 'production');
       
-      // Use API proxy for local dev, direct backend URL for production/static
-      const targetUrl = isProduction ? backendUrl : '/api/predict';
+      // Use API proxy for local dev, direct Hugging Face URL for production/static
+      const targetUrl = isProduction ? huggingFaceUrl : '/api/predict';
+      
+      // For direct Hugging Face calls, use 'file' field name
+      if (isProduction) {
+        formData.delete('image');
+        formData.append('file', file);
+      }
+
+      const headers = {};
+      if (isProduction) {
+        headers['accept'] = 'application/json';
+      }
 
       const response = await fetch(targetUrl, {
         method: 'POST',
         body: formData,
+        headers: headers,
       });
 
       if (!response.ok) {
@@ -78,11 +92,13 @@ export default function Upload() {
       const data = await response.json();
       setResult(data);
     } catch (err) {
-      // If connection fails, show mock response for demo
+      // If connection fails (CORS, network, etc.), show mock response for demo
       if (err.message.includes('fetch failed') || 
           err.message.includes('Failed to fetch') ||
-          err.message.includes('NetworkError')) {
-        console.warn('Backend unavailable, showing mock response');
+          err.message.includes('NetworkError') ||
+          err.message.includes('CORS') ||
+          err.name === 'TypeError') {
+        console.warn('Backend unavailable or CORS error, showing mock response');
         setResult({
           label: 'Tomato___Late_blight',
           confidence: 0.9741,

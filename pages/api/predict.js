@@ -25,33 +25,39 @@ export default async function handler(req, res) {
     });
 
     const [fields, files] = await form.parse(req);
-    imageFile = files.image?.[0];
+    // Accept both 'image' and 'file' field names for compatibility
+    imageFile = files.image?.[0] || files.file?.[0];
 
     if (!imageFile) {
       return res.status(400).json({ error: 'لم يتم العثور على صورة في الطلب' });
     }
 
-    // Get the backend URL from environment variable or use default
-    const backendUrl = process.env.MODEL_SERVER_URL || 'http://localhost:5000/predict';
+    // Get the backend URL from environment variable or use Hugging Face default
+    const backendUrl = process.env.MODEL_SERVER_URL || 
+      'https://abdulrhmanhelmy-plant-disease-inference-api.hf.space/predict';
 
     // Read the file
     const fileData = fs.readFileSync(imageFile.filepath);
     const fileName = imageFile.originalFilename || 'image.jpg';
     const fileType = imageFile.mimetype || 'image/jpeg';
 
-    // Create FormData for forwarding to Flask backend using form-data package
+    // Create FormData for forwarding to Hugging Face API
+    // Note: Hugging Face API expects field name 'file' not 'image'
     const formData = new FormData();
-    formData.append('image', fileData, {
+    formData.append('file', fileData, {
       filename: fileName,
       contentType: fileType,
     });
 
-    // Forward the request to Flask backend
+    // Forward the request to Hugging Face API
     try {
       const response = await fetch(backendUrl, {
         method: 'POST',
         body: formData,
-        headers: formData.getHeaders(),
+        headers: {
+          ...formData.getHeaders(),
+          'accept': 'application/json',
+        },
       });
 
       if (!response.ok) {

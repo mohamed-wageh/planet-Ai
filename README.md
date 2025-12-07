@@ -48,13 +48,24 @@ npm run dev
 
 ### متغيرات البيئة
 
-أنشئ ملف `.env.local` في جذر المشروع:
+أنشئ ملف `.env.local` في جذر المشروع (اختياري):
 
 ```env
+# للخادم المحلي (اختياري)
 MODEL_SERVER_URL=http://localhost:5000/predict
+
+# أو للواجهة الأمامية مباشرة (للاستضافة الثابتة)
+NEXT_PUBLIC_MODEL_SERVER_URL=https://abdulrhmanhelmy-plant-disease-inference-api.hf.space/predict
 ```
 
-إذا لم يتم تعيين `MODEL_SERVER_URL`، سيستخدم التطبيق القيمة الافتراضية `http://localhost:5000/predict`.
+**القيم الافتراضية:**
+- API Proxy (للخادم): يستخدم Hugging Face API افتراضياً
+- Frontend (للثابت): يستخدم Hugging Face API مباشرة
+
+**Hugging Face API Endpoint:**
+```
+https://abdulrhmanhelmy-plant-disease-inference-api.hf.space/predict
+```
 
 **ملاحظة:** إذا كان الخادم الخلفي غير متاح، سيعيد API proxy استجابة تجريبية للاختبار.
 
@@ -87,14 +98,24 @@ MODEL_SERVER_URL=http://localhost:5000/predict
 ### صفحة حول المشروع (`/about`)
 معلومات عن المشروع، الفريق، ومجموعة البيانات.
 
-## 🔌 التكامل مع الخادم الخلفي
+## 🔌 التكامل مع Hugging Face API
 
-التطبيق يتصل بخادم Flask الخلفي عبر API proxy في `/api/predict`. 
+التطبيق يتصل بنموذج Hugging Face الموجود على:
+```
+https://abdulrhmanhelmy-plant-disease-inference-api.hf.space/predict
+```
+
+**للتطوير المحلي:**
+- يستخدم API proxy في `/api/predict` الذي يوجه الطلبات إلى Hugging Face API
+
+**للنشر الثابت (GitHub Pages):**
+- يتصل مباشرة بـ Hugging Face API من المتصفح
 
 **تنسيق الطلب:**
 - Method: POST
 - Content-Type: multipart/form-data
-- Field: `image` (ملف الصورة)
+- Field: `file` (للـ Hugging Face API مباشرة) أو `image` (لـ API proxy)
+- Headers: `accept: application/json`
 
 **تنسيق الاستجابة المتوقع:**
 ```json
