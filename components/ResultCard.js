@@ -54,17 +54,7 @@ export default function ResultCard({ result, imagePreview }) {
         </div>
       )}
 
-      <details className="json-details" open={showJson}>
-        <summary
-          className="json-summary"
-          onClick={(e) => {
-            e.preventDefault();
-            setShowJson(!showJson);
-          }}>
-          {showJson ? "إخفاء" : "عرض"} بيانات JSON الكاملة
-        </summary>
-        <pre className="json-content">{JSON.stringify(result, null, 2)}</pre>
-      </details>
+      
     </div>
   );
 }
