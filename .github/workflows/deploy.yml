@@ -35,6 +35,10 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Copy .nojekyll to out directory
+        run: cp .nojekyll out/.nojekyll || echo ".nojekyll already exists or not needed"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
